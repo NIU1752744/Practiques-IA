@@ -4,31 +4,44 @@ __group__ = 'TO_BE_FILLED'
 from utils_data import read_dataset, read_extended_dataset, crop_images
 from utils import *
 from KNN import *
+from Kmeans import *
 from utils_data import *
 
-def Retrieval_by_color(test_imgs_):
-    
-    pass
+def Retrieval_by_color(imgs, color, n_items):
+    selected_imgs = []
+    selected_labels = []
+    n = 0
+    i = 0
+    while n < n_items and i < len(test_imgs_color):
+        img = imgs[i]
+        km = KMeans(img, K=5, options={"km_init": "random"})
+        km.find_bestK(10)
+        print(km.K)
+        km.fit()
+        colors = get_colors(km.centroids)
+        if colors[0] == color:
+            print("Found!")
+            selected_imgs.append(imgs[i])
+            selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
+            n += 1
+        print("Currently found:",n)
+        i += 1
+    visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
 
-def Retrieval_by_shape(train_imgs, train_class_labels, test_imgs, test_imgs_color, shape, n_items):
-    knn = KNN(train_imgs, train_class_labels)
-    labels = knn.predict(test_imgs, 5)
 
+def Retrieval_by_shape(imgs, labels, shape, n_items):
     indexes = []
     n = 0
     i = 0
-    while n < n_items and i < len(labels):
-        if labels[i] == shape:
-            indexes.append(i)
-            n += 1
-        i += 1
-
     selected_imgs = []
     selected_labels = []
-    for i in range(0, n):
-        selected_imgs.append(test_imgs_color[indexes[i]])
-        selected_labels.append(labels[indexes[i]])
-    visualize_retrieval(selected_imgs, n, info=selected_labels, ok=None, title='', query=None)
+    while n < n_items and i < len(labels):
+        if labels[i] == shape:
+            selected_imgs.append(imgs[i])
+            selected_labels.append(labels[i])            
+            n += 1
+        i += 1
+    visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
     
 
 if __name__ == '__main__':
@@ -64,7 +77,48 @@ if __name__ == '__main__':
         if function == 0:
             break
         elif function == 1:
-            print("error\n")
+            print("Which color do you want to find?\n")
+            print("1. Red")
+            print("2. Orange")
+            print("3. Brown")
+            print("4. Yellow")
+            print("5. Green")
+            print("6. Blue")
+            print("7. Purple")
+            print("8. Pink")
+            print("9. Black")
+            print("10. Grey")
+            print("11. White")
+
+            choice = int(input("Enter a number (1-11): "))
+
+            if choice == 1:
+                color = "Red"
+            elif choice == 2:
+                color = "Orange"
+            elif choice == 3:
+                color = "Brown"
+            elif choice == 4:
+                color = "Yellow"
+            elif choice == 5:
+                color = "Green"
+            elif choice == 6:
+                color = "Blue"
+            elif choice == 7:
+                color = "Purple"
+            elif choice == 8:
+                color = "Pink"
+            elif choice == 9:
+                color = "Black"
+            elif choice == 10:
+                color = "Grey"
+            elif choice == 11:
+                color = "White"
+            else:
+                color = "Invalid option"
+            n_items = int(input("How many images do you want to search? Enter a number: "))
+            print("Please wait...")
+            Retrieval_by_color(test_imgs_color, color, n_items)
         elif function == 2:
             print("Which shape do you want to find?\n")
             print("1. Dresses")
@@ -97,7 +151,10 @@ if __name__ == '__main__':
                 shape = "Invalid option"
             n_items = int(input("How many images do you want to search? Enter a number: "))
             print("Please wait...")
-            Retrieval_by_shape(train_imgs, train_class_labels, test_imgs, test_imgs_color, shape, n_items)
+            knn = KNN(train_imgs, train_class_labels)
+            labels = knn.predict(test_imgs, 5)
+
+            Retrieval_by_shape(test_imgs_color, labels, shape, n_items)
 
 
     """
