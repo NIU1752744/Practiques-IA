@@ -88,12 +88,6 @@ class KMeans:
                             self.centroids[k][j] = self.X[i][j]
                         k += 1
                         anteriors.append(actual)
-            """
-            #Codi fet per Claude
-            indices = np.round(np.linspace(0, self.X.shape[0] - 1, self.K)).astype(int)
-            self.centroids = self.X[indices].copy()
-            """
-
         else:
             nPixels = self.X.shape[0]
             for i in range(self.K):
@@ -201,7 +195,6 @@ class KMeans:
                 self.fit()
                 return
         self.K = max_K
-        self.fit()
 
 
 def distance(X, C):
