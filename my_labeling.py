@@ -8,28 +8,28 @@ from Kmeans import *
 from utils_data import *
 
 
-#n37 keeps failing (red)
 def Retrieval_by_color(imgs, color, n_items):
     selected_imgs = []
     selected_labels = []
     n = 0
     i = 0
-    while n < n_items and i < len(test_imgs_color):
+    while n < n_items and i < len(imgs):
         img = imgs[i]
         km = KMeans(img, K=3, options={"km_init": "random"})
-        km.find_bestK(10)
+        #km.find_bestK(10)
         km.fit()
         colors = get_colors(km.centroids)
-        if colors[0] == color:
+        if color in colors:
             #print("Found!")
             selected_imgs.append(imgs[i])
-            selected_labels.append((str(colors[0]), str(colors[1])))
+            selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
             n += 1
             #debug:
             # visualize_retrieval([img], 1, info=[(i, str(colors[0]), str(colors[1]), str(colors[2]))], ok=None, title='Yes!!!', query=None)
+        """
         else:
             km2 = KMeans(img, K=3, options={"km_init": "random"})
-            km2.find_bestK(10)
+            #km2.find_bestK(10)
             km2.fit()
             colors2 = get_colors(km2.centroids)
             if colors2[0] == color:
@@ -38,7 +38,7 @@ def Retrieval_by_color(imgs, color, n_items):
                 n += 1
             else:
                 km3 = KMeans(img, K=3, options={"km_init": "random"})
-                km3.find_bestK(10)
+                #km3.find_bestK(10)
                 km3.fit()
                 colors3 = get_colors(km3.centroids)
                 if colors3[0] == color:
@@ -47,7 +47,8 @@ def Retrieval_by_color(imgs, color, n_items):
                     n += 1
             #debug:
             # visualize_retrieval([img], 1, info=[(i, str(colors[0]), str(colors[1]), str(colors[2]))], ok=None, title='No', query=None)
-        print("Searched:", i, "Currently found:",n)
+            """
+        #print("Searched:", i, "Currently found:",n)
         i += 1
     visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
 
@@ -65,6 +66,10 @@ def Retrieval_by_shape(imgs, labels, shape, n_items):
             n += 1
         i += 1
     visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+
+
+def Retrieval_combined(imgs, labels, shape, n_items, color):
+    pass
     
 
 if __name__ == '__main__':
