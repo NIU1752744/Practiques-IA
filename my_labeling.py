@@ -16,39 +16,12 @@ def Retrieval_by_color(imgs, color, n_items):
     while n < n_items and i < len(imgs):
         img = imgs[i]
         km = KMeans(img, K=3, options={"km_init": "random"})
-        #km.find_bestK(10)
         km.fit()
         colors = get_colors(km.centroids)
         if color in colors:
-            #print("Found!")
             selected_imgs.append(imgs[i])
             selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
             n += 1
-            #debug:
-            # visualize_retrieval([img], 1, info=[(i, str(colors[0]), str(colors[1]), str(colors[2]))], ok=None, title='Yes!!!', query=None)
-        """
-        else:
-            km2 = KMeans(img, K=3, options={"km_init": "random"})
-            #km2.find_bestK(10)
-            km2.fit()
-            colors2 = get_colors(km2.centroids)
-            if colors2[0] == color:
-                selected_imgs.append(imgs[i])
-                selected_labels.append((str(colors2[0]), str(colors2[1])))
-                n += 1
-            else:
-                km3 = KMeans(img, K=3, options={"km_init": "random"})
-                #km3.find_bestK(10)
-                km3.fit()
-                colors3 = get_colors(km3.centroids)
-                if colors3[0] == color:
-                    selected_imgs.append(imgs[i])
-                    selected_labels.append((str(colors3[0]), str(colors3[1])))
-                    n += 1
-            #debug:
-            # visualize_retrieval([img], 1, info=[(i, str(colors[0]), str(colors[1]), str(colors[2]))], ok=None, title='No', query=None)
-            """
-        #print("Searched:", i, "Currently found:",n)
         i += 1
     visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
 
