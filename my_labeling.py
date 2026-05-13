@@ -42,8 +42,23 @@ def Retrieval_by_shape(imgs, labels, shape, n_items):
 
 
 def Retrieval_combined(imgs, labels, shape, n_items, color):
-    selected_imgs, selected_labels = Retrieval_by_shape(imgs, labels, shape, n_items)
-    selected_imgs, selected_labels = Retrieval_by_color(selected_imgs, color, n_items)
+    #selected_imgs, selected_labels = Retrieval_by_shape(imgs, labels, shape, n_items)
+    #selected_imgs, selected_labels = Retrieval_by_color(selected_imgs, color, n_items)
+    selected_imgs = []
+    selected_labels = []
+    n = 0
+    i = 0
+    while n < n_items and i < len(labels):
+        if labels[i] == shape:
+            km = KMeans(imgs[i], K=3, options={"km_init": "random"})
+            km.fit()
+            colors = get_colors(km.centroids)
+            if color in colors:
+                selected_imgs.append(imgs[i])
+                selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
+                n+=1
+        i+=1
+
     return selected_imgs, selected_labels
     
 
@@ -68,6 +83,8 @@ if __name__ == '__main__':
     # You can start coding your functions here
 
     option = -1
+    knn = KNN(train_imgs, train_class_labels)
+    labels = knn.predict(test_imgs, 5)
 
     while option != 0:
         print("Welcome to the Clothes Finder Program! Please select a function:\n")
@@ -137,8 +154,6 @@ if __name__ == '__main__':
                 shape = "Invalid option"
             n_items = int(input("How many images do you want to search? Enter a number: "))
             print("Please wait...")
-            knn = KNN(train_imgs, train_class_labels)
-            labels = knn.predict(test_imgs, 5)
 
             selected_imgs, selected_labels = Retrieval_by_shape(test_imgs_color, labels, shape, n_items)
             visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
@@ -196,8 +211,6 @@ if __name__ == '__main__':
                 shape = "Invalid option"
             n_items = int(input("How many images do you want to search? Enter a number: "))
             print("Please wait...")
-            knn = KNN(train_imgs, train_class_labels)
-            labels = knn.predict(test_imgs, 5)
             selected_imgs, selected_labels = Retrieval_combined(test_imgs_color, labels, shape, n_items, color)
             visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
 
