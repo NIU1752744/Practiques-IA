@@ -8,22 +8,32 @@ from Kmeans import *
 from utils_data import *
 
 
-def Retrieval_by_color(imgs, color, n_items):
+def Retrieval_by_color(imgs, color, n_items, option):
+    indexes = []
     selected_imgs = []
     selected_labels = []
     n = 0
     i = 0
     while n < n_items and i < len(imgs):
         img = imgs[i]
-        km = KMeans(img, K=3, options={"km_init": "random"})
+        if option == 1:
+            km = KMeans(img, K=3, options={"km_init": "random"})
+        else:
+            km = KMeans(img, K=1, options={"km_init": "random"})
+            km.find_bestK(max_K=5)
         km.fit()
+        #Plot3DCloud(km)
         colors = get_colors(km.centroids)
         if color in colors:
             selected_imgs.append(imgs[i])
-            selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
+            if option == 1:
+                selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
+            else:
+                selected_labels.append(tuple(str(c) for c in colors))
+            indexes.append(i)
             n += 1
         i += 1
-    return selected_imgs, selected_labels
+    return np.array(selected_imgs), selected_labels, indexes
 
 
 def Retrieval_by_shape(imgs, labels, shape, n_items):
@@ -32,18 +42,21 @@ def Retrieval_by_shape(imgs, labels, shape, n_items):
     i = 0
     selected_imgs = []
     selected_labels = []
+    correct = []
     while n < n_items and i < len(labels):
         if labels[i] == shape:
             selected_imgs.append(imgs[i])
-            selected_labels.append(labels[i])            
+            selected_labels.append(labels[i])         
+            indexes.append(i) 
             n += 1
         i += 1
-    return selected_imgs, selected_labels
+    return np.array(selected_imgs), selected_labels, indexes
 
 
 def Retrieval_combined(imgs, labels, shape, n_items, color):
     #selected_imgs, selected_labels = Retrieval_by_shape(imgs, labels, shape, n_items)
     #selected_imgs, selected_labels = Retrieval_by_color(selected_imgs, color, n_items)
+    indexes = []
     selected_imgs = []
     selected_labels = []
     n = 0
@@ -55,11 +68,46 @@ def Retrieval_combined(imgs, labels, shape, n_items, color):
             colors = get_colors(km.centroids)
             if color in colors:
                 selected_imgs.append(imgs[i])
-                selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
+                selected_labels.append(tuple(colors))
+                indexes.append(i)
                 n+=1
         i+=1
 
-    return selected_imgs, selected_labels
+    return selected_imgs, selected_labels, indexes
+
+def Get_shape_accuracy(correct_shapes):
+    return correct_shapes.tolist().count(True) / len(correct_shapes)
+
+def Get_color_accuracy(imgs, test_labels, option):
+    labels = []
+    for i in range(0, len(imgs)):
+        if option == 1:
+            km = KMeans(imgs[i], K=3, options={"km_init": "random"})
+        else:
+            km = KMeans(imgs[i], K=1, options={"km_init": "random"})
+            km.find_bestK(max_K=5)
+        km.fit()
+        colors = get_colors(km.centroids)
+        labels.append(colors)
+    correct_predictions = 0
+    incorrect_predictions = 0
+    for i in range(0, len(labels)):
+        correct = 0
+        incorrect = 0
+        for j in labels[i]:
+            if j in test_labels[i]:
+                correct += 1
+                
+            else:
+                incorrect += 1
+        if correct >= incorrect:
+            correct_predictions += 1
+        else:
+            incorrect_predictions += 1
+    #print(correct_predictions + incorrect_predictions)
+    return correct_predictions / (correct_predictions + incorrect_predictions)
+
+
     
 
 if __name__ == '__main__':
@@ -85,15 +133,19 @@ if __name__ == '__main__':
     option = -1
     knn = KNN(train_imgs, train_class_labels)
     labels = knn.predict(test_imgs, 5)
+    
+    correct_shapes = labels == test_class_labels
 
     while option != 0:
         print("Welcome to the Clothes Finder Program! Please select a function:\n")
         print("1. Retrieval by color")
         print("2. Retrieval by shape")
         print("3. Combined retrieval (color + shape)")
+        print("4. Get shape accuracy")
+        print("5. Get color accuracy")
         print("0. Exit")
 
-        function = int(input("Enter a number (0-3): "))
+        function = int(input("Enter a number (0-5): "))
         if function == 0:
             break
         elif function == 1:
@@ -126,9 +178,19 @@ if __name__ == '__main__':
             else:
                 color = "Invalid option"
             n_items = int(input("How many images do you want to search? Enter a number: "))
+            print("Choose the value to assign to K:\n1. K=3 always (faster)\n2. Run find_bestK for each image (slower)")
+            option = int(input("Enter a number (1 or 2): "))
             print("Please wait...")
-            selected_imgs, selected_labels = Retrieval_by_color(test_imgs_color, color, n_items)
-            visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+            selected_imgs, selected_labels, selected_indexes = Retrieval_by_color(test_imgs_color, color, n_items, option)
+            test_color_labels_reduced = test_color_labels[selected_indexes]
+            correct_colors = []
+            for i in test_color_labels_reduced:
+                if color in i:
+                    correct_colors.append(True)
+                else:
+                    correct_colors.append(False)
+            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_colors, title=("searching for",color), query=None)
+            print("Accuracy:", correct_colors.count(True)/len(correct_colors))
 
         elif function == 2:
             print("Which shape do you want to find?\n1. Dresses\n2. Flip Flops\n3. Jeans\n4. Sandals\n5. Shirts\n6. Shorts\n7. Socks\n8. Handbags")
@@ -155,8 +217,13 @@ if __name__ == '__main__':
             n_items = int(input("How many images do you want to search? Enter a number: "))
             print("Please wait...")
 
-            selected_imgs, selected_labels = Retrieval_by_shape(test_imgs_color, labels, shape, n_items)
-            visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+            selected_imgs, selected_labels, selected_indexes = Retrieval_by_shape(test_imgs_color, labels, shape, n_items)
+            correct = correct_shapes[selected_indexes]
+            #visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=correct, title='', query=None)
+            visualize_retrieval(selected_imgs, n_items, info=test_class_labels[selected_indexes], ok=correct, title=("searching for",shape), query=None)
+            print("Accuracy:", correct.tolist().count(True)/len(correct))
+
+
 
         elif function == 3:
             print("Which color do you want to find?\n1. Red\n2. Orange\n3. Brown\n4. Yellow\n5. Green\n6. Blue\n7. Purple\n8. Pink\n9. Black\n10. Grey\n11. White")
@@ -211,10 +278,14 @@ if __name__ == '__main__':
                 shape = "Invalid option"
             n_items = int(input("How many images do you want to search? Enter a number: "))
             print("Please wait...")
-            selected_imgs, selected_labels = Retrieval_combined(test_imgs_color, labels, shape, n_items, color)
+            selected_imgs, selected_labels, selected_indexes = Retrieval_combined(test_imgs_color, labels, shape, n_items, color)
             visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
-
-            
+        elif function == 4:
+            print(Get_shape_accuracy(correct_shapes))
+        elif function == 5:
+            print("Choose the value to assign to K:\n1. K=3 always (faster)\n2. Run find_bestK for each image (slower)")
+            option = int(input("Enter a number (1 or 2): "))
+            print(Get_color_accuracy(test_imgs_color, test_color_labels, option))
 
 
 
