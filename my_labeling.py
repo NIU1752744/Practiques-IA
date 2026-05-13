@@ -23,7 +23,7 @@ def Retrieval_by_color(imgs, color, n_items):
             selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
             n += 1
         i += 1
-    visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+    return selected_imgs, selected_labels
 
 
 def Retrieval_by_shape(imgs, labels, shape, n_items):
@@ -38,11 +38,13 @@ def Retrieval_by_shape(imgs, labels, shape, n_items):
             selected_labels.append(labels[i])            
             n += 1
         i += 1
-    visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+    return selected_imgs, selected_labels
 
 
 def Retrieval_combined(imgs, labels, shape, n_items, color):
-    pass
+    selected_imgs, selected_labels = Retrieval_by_shape(imgs, labels, shape, n_items)
+    selected_imgs, selected_labels = Retrieval_by_color(selected_imgs, color, n_items)
+    return selected_imgs, selected_labels
     
 
 if __name__ == '__main__':
@@ -78,18 +80,7 @@ if __name__ == '__main__':
         if function == 0:
             break
         elif function == 1:
-            print("Which color do you want to find?\n")
-            print("1. Red")
-            print("2. Orange")
-            print("3. Brown")
-            print("4. Yellow")
-            print("5. Green")
-            print("6. Blue")
-            print("7. Purple")
-            print("8. Pink")
-            print("9. Black")
-            print("10. Grey")
-            print("11. White")
+            print("Which color do you want to find?\n1. Red\n2. Orange\n3. Brown\n4. Yellow\n5. Green\n6. Blue\n7. Purple\n8. Pink\n9. Black\n10. Grey\n11. White")
 
             choice = int(input("Enter a number (1-11): "))
 
@@ -119,17 +110,11 @@ if __name__ == '__main__':
                 color = "Invalid option"
             n_items = int(input("How many images do you want to search? Enter a number: "))
             print("Please wait...")
-            Retrieval_by_color(test_imgs_color, color, n_items)
+            selected_imgs, selected_labels = Retrieval_by_color(test_imgs_color, color, n_items)
+            visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+
         elif function == 2:
-            print("Which shape do you want to find?\n")
-            print("1. Dresses")
-            print("2. Flip Flops")
-            print("3. Jeans")
-            print("4. Sandals")
-            print("5. Shirts")
-            print("6. Shorts")
-            print("7. Socks")
-            print("8. Handbags")
+            print("Which shape do you want to find?\n1. Dresses\n2. Flip Flops\n3. Jeans\n4. Sandals\n5. Shirts\n6. Shorts\n7. Socks\n8. Handbags")
             choice = int(input("Enter a number (1-8): "))
 
             if choice == 1:
@@ -155,7 +140,69 @@ if __name__ == '__main__':
             knn = KNN(train_imgs, train_class_labels)
             labels = knn.predict(test_imgs, 5)
 
-            Retrieval_by_shape(test_imgs_color, labels, shape, n_items)
+            selected_imgs, selected_labels = Retrieval_by_shape(test_imgs_color, labels, shape, n_items)
+            visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+
+        elif function == 3:
+            print("Which color do you want to find?\n1. Red\n2. Orange\n3. Brown\n4. Yellow\n5. Green\n6. Blue\n7. Purple\n8. Pink\n9. Black\n10. Grey\n11. White")
+
+            choice = int(input("Enter a number (1-11): "))
+
+            if choice == 1:
+                color = "Red"
+            elif choice == 2:
+                color = "Orange"
+            elif choice == 3:
+                color = "Brown"
+            elif choice == 4:
+                color = "Yellow"
+            elif choice == 5:
+                color = "Green"
+            elif choice == 6:
+                color = "Blue"
+            elif choice == 7:
+                color = "Purple"
+            elif choice == 8:
+                color = "Pink"
+            elif choice == 9:
+                color = "Black"
+            elif choice == 10:
+                color = "Grey"
+            elif choice == 11:
+                color = "White"
+            else:
+                color = "Invalid option"
+            
+            print("Which shape do you want to find?\n1. Dresses\n2. Flip Flops\n3. Jeans\n4. Sandals\n5. Shirts\n6. Shorts\n7. Socks\n8. Handbags")
+            choice = int(input("Enter a number (1-8): "))
+
+            if choice == 1:
+                shape = "Dresses"
+            elif choice == 2:
+                shape = "Flip Flops"
+            elif choice == 3:
+                shape = "Jeans"
+            elif choice == 4:
+                shape = "Sandals"
+            elif choice == 5:
+                shape = "Shirts"
+            elif choice == 6:
+                shape = "Shorts"
+            elif choice == 7:
+                shape = "Socks"
+            elif choice == 8:
+                shape = "Handbags"
+            else:
+                shape = "Invalid option"
+            n_items = int(input("How many images do you want to search? Enter a number: "))
+            print("Please wait...")
+            knn = KNN(train_imgs, train_class_labels)
+            labels = knn.predict(test_imgs, 5)
+            selected_imgs, selected_labels = Retrieval_combined(test_imgs_color, labels, shape, n_items, color)
+            visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+
+            
+
 
 
     """
