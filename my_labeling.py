@@ -68,12 +68,12 @@ def Retrieval_combined(imgs, labels, shape, n_items, color):
             colors = get_colors(km.centroids)
             if color in colors:
                 selected_imgs.append(imgs[i])
-                selected_labels.append(tuple(colors))
+                selected_labels.append(tuple(str(c) for c in colors))
                 indexes.append(i)
                 n+=1
         i+=1
 
-    return selected_imgs, selected_labels, indexes
+    return np.array(selected_imgs), selected_labels, indexes
 
 def Get_shape_accuracy(correct_shapes):
     return correct_shapes.tolist().count(True) / len(correct_shapes)
@@ -279,7 +279,21 @@ if __name__ == '__main__':
             n_items = int(input("How many images do you want to search? Enter a number: "))
             print("Please wait...")
             selected_imgs, selected_labels, selected_indexes = Retrieval_combined(test_imgs_color, labels, shape, n_items, color)
-            visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=None, title='', query=None)
+            correct_shapes_reduced = correct_shapes[selected_indexes]
+            test_color_labels_reduced = test_color_labels[selected_indexes]
+            correct_colors = []
+            for i in test_color_labels_reduced:
+                if color in i:
+                    correct_colors.append(True)
+                else:
+                    correct_colors.append(False)
+            correct_combined = []
+            for i in range(0, len(correct_colors)):
+                if correct_colors[i] == correct_shapes_reduced[i] == True:
+                    correct_combined.append(True)
+                else:
+                    correct_combined.append(False)
+            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_combined, title=("searching for",color, shape), query=None)
         elif function == 4:
             print(Get_shape_accuracy(correct_shapes))
         elif function == 5:
