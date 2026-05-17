@@ -188,10 +188,11 @@ class KMeans:
             self.withinClassDistance()
             wcd_list.append(self.wcd)
         #print(wcd_list)
+        
         for i in range(1, len(wcd_list)):
             decrease = 100 * (wcd_list[i]/wcd_list[i - 1])
             if (100 - decrease) < 20:
-                self.K = i + 2
+                self.K = i + 1
                 self.fit()
                 return
         self.K = max_K
