@@ -174,6 +174,30 @@ class KMeans:
 
 
         #print("\n Average:", average, "\n")
+    def interClassDistance(self):
+        global_mean = np.mean(self.X, axis=0)
+        
+        icd = 0
+        for i in range(self.K):
+            points_in_cluster = np.sum(self.labels == i)
+            
+            if points_in_cluster > 0:
+                dist_sq = np.sum((self.centroids[i] - global_mean) ** 2)
+                icd += points_in_cluster * dist_sq
+                
+        self.icd = icd / len(self.X)
+        return self.icd
+
+    def fisherCoefficient(self):
+        self.withinClassDistance()
+        self.interClassDistance()
+        
+        if self.wcd == 0:
+            self.fisher = float('inf')
+        else:
+            self.fisher = self.icd / self.wcd
+            
+        return self.fisher
 
     def find_bestK(self, max_K):
         """
@@ -181,14 +205,16 @@ class KMeans:
         """
 
         wcd_list = []
+        metrics = []    
 
         for i in range(2, max_K + 1):
             self.K = i
             self.fit()
+            #fisher_val = self.fisherCoefficient()
+            #metrics.append(fisher_val)
             self.withinClassDistance()
             wcd_list.append(self.wcd)
         #print(wcd_list)
-        
         for i in range(1, len(wcd_list)):
             decrease = 100 * (wcd_list[i]/wcd_list[i - 1])
             if (100 - decrease) < 20:
@@ -196,7 +222,12 @@ class KMeans:
                 self.fit()
                 return
         self.K = max_K
-
+        """
+        best_idx = np.argmax(metrics)
+        best_k = best_idx + 2
+        self.K = best_k
+        self.fit()
+        """
 
 def distance(X, C):
     """
