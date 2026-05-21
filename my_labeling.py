@@ -294,6 +294,7 @@ if __name__ == '__main__':
                 else:
                     correct_combined.append(False)
             visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_combined, title=("searching for",color, shape), query=None)
+            print("Accuracy:", correct_combined.count(True)/len(correct_combined))
         elif function == 4:
             print(Get_shape_accuracy(correct_shapes))
         elif function == 5:
