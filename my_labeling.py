@@ -301,38 +301,3 @@ if __name__ == '__main__':
             print("Choose the value to assign to K:\n1. K=3 always (faster)\n2. Run find_bestK for each image (slower)")
             option = int(input("Enter a number (1 or 2): "))
             print(Get_color_accuracy(test_imgs_color, test_color_labels, option))
-
-
-
-    """
-
-    from utils import *
-    import numpy as np
-    from PIL import Image
-    from Kmeans import KMeans
-    from Kmeans import get_colors, distance
-
-    Path_to_img = './images/4solid_colors.jpg'
-    img = Image.open(Path_to_img)
-    img = img.convert('RGB')
-    km = KMeans(img, K=4, options={"km_init": "random"})
-    km.fit()
-    print(km.centroids)
-    
-    print(get_colors(km.centroids))
-    """
-
-
-    """
-    import pickle
-    from utils import *
-    from Kmeans import *
-
-    np.random.seed(666)
-    with open('./test/test_cases_kmeans.pkl', 'rb') as f:
-        test_cases = pickle.load(f)
-    for ix, input in enumerate(test_cases['input']):
-                km = KMeans(input, test_cases['K'][ix])
-                km.find_bestK(10)
-                print(km.K)
-    """

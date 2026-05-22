@@ -171,6 +171,7 @@ class KMeans:
         #self.wcd = distances / len(self.X)
         diff = self.X - self.centroids[self.labels]
         self.wcd = np.mean(np.sum(diff ** 2, axis=1))
+        return self.wcd
 
 
         #print("\n Average:", average, "\n")
