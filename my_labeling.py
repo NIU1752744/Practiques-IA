@@ -12,6 +12,7 @@ def Retrieval_by_color(imgs, color, n_items, option):
     indexes = []
     selected_imgs = []
     selected_labels = []
+    statistics = []
     n = 0
     i = 0
     while n < n_items and i < len(imgs):
@@ -33,7 +34,7 @@ def Retrieval_by_color(imgs, color, n_items, option):
             indexes.append(i)
             n += 1
         i += 1
-    return np.array(selected_imgs), selected_labels, indexes
+    return np.array(selected_imgs), selected_labels, indexes, statistics
 
 
 def Retrieval_by_shape(imgs, labels, shape, n_items):
@@ -181,7 +182,7 @@ if __name__ == '__main__':
             print("Choose the value to assign to K:\n1. K=3 always (faster)\n2. Run find_bestK for each image (slower)")
             option = int(input("Enter a number (1 or 2): "))
             print("Please wait...")
-            selected_imgs, selected_labels, selected_indexes = Retrieval_by_color(test_imgs_color, color, n_items, option)
+            selected_imgs, selected_labels, selected_indexes, statistics = Retrieval_by_color(test_imgs_color, color, n_items, option)
             test_color_labels_reduced = test_color_labels[selected_indexes]
             correct_colors = []
             for i in test_color_labels_reduced:
@@ -189,8 +190,9 @@ if __name__ == '__main__':
                     correct_colors.append(True)
                 else:
                     correct_colors.append(False)
-            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_colors, title=("searching for",color), query=None)
-            print("Accuracy:", correct_colors.count(True)/len(correct_colors))
+            accuracy = correct_colors.count(True)/len(correct_colors)
+            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_colors, title=("Searched for",color,"Accuracy:",accuracy), query=None)
+            print("Accuracy:", accuracy)
 
         elif function == 2:
             print("Which shape do you want to find?\n1. Dresses\n2. Flip Flops\n3. Jeans\n4. Sandals\n5. Shirts\n6. Shorts\n7. Socks\n8. Handbags")
@@ -220,8 +222,9 @@ if __name__ == '__main__':
             selected_imgs, selected_labels, selected_indexes = Retrieval_by_shape(test_imgs_color, labels, shape, n_items)
             correct = correct_shapes[selected_indexes]
             #visualize_retrieval(selected_imgs, n_items, info=selected_labels, ok=correct, title='', query=None)
-            visualize_retrieval(selected_imgs, n_items, info=test_class_labels[selected_indexes], ok=correct, title=("searching for",shape), query=None)
-            print("Accuracy:", correct.tolist().count(True)/len(correct))
+            accuracy = correct.tolist().count(True)/len(correct)
+            visualize_retrieval(selected_imgs, n_items, info=test_class_labels[selected_indexes], ok=correct, title=("Searched for",shape,"Accuracy:",accuracy), query=None)
+            print("Accuracy:", accuracy)
 
 
 
@@ -293,8 +296,9 @@ if __name__ == '__main__':
                     correct_combined.append(True)
                 else:
                     correct_combined.append(False)
-            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_combined, title=("searching for",color, shape), query=None)
-            print("Accuracy:", correct_combined.count(True)/len(correct_combined))
+            accuracy = correct_combined.count(True)/len(correct_combined)
+            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_combined, title=("Searched for",color, shape,"Accuracy:",accuracy), query=None)
+            print("Accuracy:", accuracy)
         elif function == 4:
             print(Get_shape_accuracy(correct_shapes))
         elif function == 5:
