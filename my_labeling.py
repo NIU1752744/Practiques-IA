@@ -6,6 +6,7 @@ from utils import *
 from KNN import *
 from Kmeans import *
 from utils_data import *
+import time
 
 
 def Retrieval_by_color(imgs, color, n_items, option):
@@ -21,6 +22,7 @@ def Retrieval_by_color(imgs, color, n_items, option):
             km = KMeans(img, K=3, options={"km_init": "random"})
         else:
             km = KMeans(img, K=1, options={"km_init": "random"})
+            km.llindar = 20
             km.find_bestK(max_K=5)
         km.fit()
         #Plot3DCloud(km)
@@ -79,13 +81,14 @@ def Retrieval_combined(imgs, labels, shape, n_items, color):
 def Get_shape_accuracy(correct_shapes):
     return correct_shapes.tolist().count(True) / len(correct_shapes)
 
-def Get_color_accuracy(imgs, test_labels, option):
+def Get_color_accuracy(imgs, test_labels, option, llindar):
     labels = []
     for i in range(0, len(imgs)):
         if option == 1:
             km = KMeans(imgs[i], K=3, options={"km_init": "random"})
         else:
             km = KMeans(imgs[i], K=1, options={"km_init": "random"})
+            km.llindar = llindar
             km.find_bestK(max_K=5)
         km.fit()
         colors = get_colors(km.centroids)
@@ -107,9 +110,128 @@ def Get_color_accuracy(imgs, test_labels, option):
             incorrect_predictions += 1
     #print(correct_predictions + incorrect_predictions)
     return correct_predictions / (correct_predictions + incorrect_predictions)
+def Kmean_statistics(images, Kmax=10):
+    """
+    images: llista d'imatges
+    """
+    n_imgs = len(images)
+    wcd_values = []
+    iterations = []
+    times = []
+    intra_means = []
+    inter_means = []
+    fisher_means = []
+
+    K_range = range(2, Kmax + 1)
+    for k in K_range:
+        wcd_k, iter_k, time_k = [], [], []
+        intra_k, inter_k, fisher_k = [], [], []
+        for img in images:
+            start = time.time()
+            km = KMeans(img, K=k, options={'km_init': 'random', 'max_iter': 100, 'tolerance': 0})
+            km.fit()
+            end = time.time()
+            wcd_k.append(km.withinClassDistance())
+            iter_k.append(km.num_iter)
+            time_k.append(end - start)
+
+            # distancies intra i inter i el seu ratio
+            labels = km.labels
+            X = km.X
+            intra = intra_class_distance(X, labels)
+            inter = inter_class_distance(X, labels)
+            intra_k.append(intra)
+            inter_k.append(inter)
+            fisher_k.append(inter / intra if intra != 0 else 0)
+
+        wcd_values.append(np.mean(wcd_k))
+        iterations.append(np.mean(iter_k))
+        times.append(np.mean(time_k))
+        intra_means.append(np.mean(intra_k))
+        inter_means.append(np.mean(inter_k))
+        fisher_means.append(np.mean(fisher_k))
+        print(f"K={k} | "
+              f"WCD(mean)={wcd_values[-1]:.2f} | "
+              f"intra(mean)={intra_means[-1]:.2f} | "
+              f"inter(mean)={inter_means[-1]:.2f} | "
+              f"Fisher(mean)={fisher_means[-1]:.2f} | "
+              f"iters(mean)={iterations[-1]:.2f} | "
+              f"time(mean)={times[-1]:.4f}s")
+
+    # --- Gráfico solo de WCD ---
+    plt.figure()
+    plt.plot(K_range, wcd_values, marker='o', label="WCD")
+    plt.xlabel("K")
+    plt.ylabel("WCD")
+    plt.title("KMeans Average Within-Class Distance (WCD)")
+    plt.legend()
+
+    # --- Gráfico de intra/inter/fisher ---
+    plt.figure()
+    plt.plot(K_range, intra_means, marker='o', label="Intra-class")
+    plt.plot(K_range, inter_means, marker='o', label="Inter-class")
+    plt.plot(K_range, fisher_means, marker='o', label="Fisher")
+    plt.xlabel("K")
+    plt.ylabel("Value")
+    plt.title("KMeans Intra-class, Inter-class & Fisher")
+    plt.legend()
+
+    # --- Gráfica de iterations ---
+    plt.figure()
+    plt.plot(K_range, iterations, marker='o')
+    plt.xlabel("K")
+    plt.ylabel("Mean Iterations")
+    plt.title("Iterations until Convergence")
+
+    # --- Gráfica de tiempos ---
+    plt.figure()
+    plt.plot(K_range, times, marker='o')
+    plt.xlabel("K")
+    plt.ylabel("Mean Time (s)")
+    plt.title("Execution Time for KMeans")
+    plt.show()
 
 
-    
+def inter_class_distance(X, labels):
+    """
+    Calcula la distancia media entre todos los pares de centroides (inter-clase).
+    X: (N, D) array con datos.
+    labels: (N,) array con la etiqueta (cluster) de cada punto.
+    Devuelve: valor escalar de la distancia media inter-clase.
+    """
+    unique_labels = np.unique(labels)
+    centroids = []
+    for cl in unique_labels:
+        class_points = X[labels == cl]
+        if len(class_points) == 0:
+            continue
+        centroids.append(np.mean(class_points, axis=0))
+    centroids = np.array(centroids)
+    if len(centroids) < 2:
+        return 0.0
+
+    total_dist = 0.0
+    count = 0
+    n = len(centroids)
+    for i in range(n):
+        for j in range(i+1, n):
+            total_dist += np.linalg.norm(centroids[i] - centroids[j])
+            count += 1
+    if count == 0:
+        return 0.0
+    return total_dist / count
+
+
+def intra_class_distance(X, labels):
+    unique_labels = np.unique(labels)
+    all_distances = []
+    for cl in unique_labels:
+        class_points = X[labels == cl]
+        if len(class_points) == 0: continue
+        centroid = np.mean(class_points, axis=0)
+        dist = np.linalg.norm(class_points - centroid, axis=1)
+        all_distances.extend(dist)
+    return np.mean(all_distances)
 
 if __name__ == '__main__':
 
@@ -144,9 +266,12 @@ if __name__ == '__main__':
         print("3. Combined retrieval (color + shape)")
         print("4. Get shape accuracy")
         print("5. Get color accuracy")
+        print("6. Test KNN for different K values")
+        print("7. Run Kmeans statistics")
+        print("8. Test different threshold values")
         print("0. Exit")
 
-        function = int(input("Enter a number (0-5): "))
+        function = int(input("Enter a number (0-8): "))
         if function == 0:
             break
         elif function == 1:
@@ -304,4 +429,54 @@ if __name__ == '__main__':
         elif function == 5:
             print("Choose the value to assign to K:\n1. K=3 always (faster)\n2. Run find_bestK for each image (slower)")
             option = int(input("Enter a number (1 or 2): "))
-            print(Get_color_accuracy(test_imgs_color, test_color_labels, option))
+            threshold = -1
+            if option == 2:
+                threshold = int(input("Choose threshold: "))  
+            print(Get_color_accuracy(test_imgs_color, test_color_labels, option, threshold))
+        elif function == 6:
+            time_list = []
+            accuracy_list = []
+
+            for i in range(1, 6):
+                time_start = time.time()
+                labels = knn.predict(test_imgs, i)
+                time_end = time.time()
+                correct_shapes = labels == test_class_labels
+                accuracy_list.append(Get_shape_accuracy(correct_shapes))
+                time_list.append(time_end - time_start)
+            plt.figure()
+            plt.plot(range(1, 6), time_list)
+            plt.xticks(range(1, 6))
+            plt.xlabel("K")
+            plt.ylabel("Time")
+            plt.title("KNN time for each K")
+
+            plt.figure()
+            plt.plot(range(1, 6), accuracy_list)
+            plt.xticks(range(1, 6))
+            plt.xlabel("K")
+            plt.ylabel("Accuracy")
+            plt.title("KNN accuracy for each K")
+
+            plt.show()
+        elif function == 7:
+            n_images = int(input("Enter number of images to use: "))
+            Kmean_statistics(test_imgs_color[0:n_images], Kmax=5)
+        elif function == 8:
+            threshold_start = 0
+            threshold_end = 100
+            n_images = int(input("Enter number of images to use: "))
+            accuracies = []
+            thresholds = []
+            for i in range(threshold_start, threshold_end + 1):
+                print("Computing accuracy for threshold",i)
+                accuracies.append(Get_color_accuracy(test_imgs_color[0:n_images], test_color_labels[0:n_images], 2, i))
+                thresholds.append(i)
+            
+            plt.figure()
+            plt.plot(thresholds, accuracies)
+            #plt.xticks(llindars)
+            plt.xlabel("Valor llindar (per defecte és 20%)")
+            plt.ylabel("Accuracy")
+            plt.title("Precisió de Kmeans per diferents valors del llindar de WCD")
+            plt.show()

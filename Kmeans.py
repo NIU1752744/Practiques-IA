@@ -20,6 +20,7 @@ class KMeans:
         self.K = K
         self._init_X(X)
         self._init_options(options)  # DICT options
+        self.llindar = 20
 
     #############################################################
     ##  THIS FUNCTION CAN BE MODIFIED FROM THIS POINT, if needed
@@ -218,7 +219,7 @@ class KMeans:
         #print(wcd_list)
         for i in range(1, len(wcd_list)):
             decrease = 100 * (wcd_list[i]/wcd_list[i - 1])
-            if (100 - decrease) < 20:
+            if (100 - decrease) < self.llindar:
                 self.K = i + 1
                 self.fit()
                 return
