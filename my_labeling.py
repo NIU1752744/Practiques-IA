@@ -9,7 +9,7 @@ from utils_data import *
 import time
 
 
-def Retrieval_by_color(imgs, color, n_items, option):
+def Retrieval_by_color(imgs, color, n_items, option, llindar):
     indexes = []
     selected_imgs = []
     selected_labels = []
@@ -19,23 +19,34 @@ def Retrieval_by_color(imgs, color, n_items, option):
     while n < n_items and i < len(imgs):
         img = imgs[i]
         if option == 1:
-            km = KMeans(img, K=3, options={"km_init": "random"})
+            km = KMeans(img, K=2, options={"km_init": "random"})
         else:
             km = KMeans(img, K=1, options={"km_init": "random"})
-            km.llindar = 20
+            km.llindar = llindar
             km.find_bestK(max_K=5)
         km.fit()
         #Plot3DCloud(km)
         colors = get_colors(km.centroids)
-        if color in colors:
-            selected_imgs.append(imgs[i])
-            if option == 1:
-                selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
-            else:
-                selected_labels.append(tuple(str(c) for c in colors))
-            indexes.append(i)
-            n += 1
-        i += 1
+        if len(color) == 1:
+            if color[0] in colors:
+                selected_imgs.append(imgs[i])
+                if option == 1:
+                    selected_labels.append((str(colors[0]), str(colors[1])))
+                else:
+                    selected_labels.append(tuple(str(c) for c in colors))
+                indexes.append(i)
+                n += 1
+            i += 1
+        else:
+            if (color[0] in colors) and (color[1] in colors):
+                selected_imgs.append(imgs[i])
+                if option == 1:
+                    selected_labels.append((str(colors[0]), str(colors[1]), str(colors[2])))
+                else:
+                    selected_labels.append(tuple(str(c) for c in colors))
+                indexes.append(i)
+                n += 1
+            i += 1
     return np.array(selected_imgs), selected_labels, indexes, statistics
 
 
@@ -66,7 +77,7 @@ def Retrieval_combined(imgs, labels, shape, n_items, color):
     i = 0
     while n < n_items and i < len(labels):
         if labels[i] == shape:
-            km = KMeans(imgs[i], K=3, options={"km_init": "random"})
+            km = KMeans(imgs[i], K=2, options={"km_init": "random"})
             km.fit()
             colors = get_colors(km.centroids)
             if color in colors:
@@ -85,7 +96,7 @@ def Get_color_accuracy(imgs, test_labels, option, llindar):
     labels = []
     for i in range(0, len(imgs)):
         if option == 1:
-            km = KMeans(imgs[i], K=3, options={"km_init": "random"})
+            km = KMeans(imgs[i], K=2, options={"km_init": "random"})
         else:
             km = KMeans(imgs[i], K=1, options={"km_init": "random"})
             km.llindar = llindar
@@ -121,12 +132,16 @@ def Kmean_statistics(images, Kmax=10):
     intra_means = []
     inter_means = []
     fisher_means = []
-
     K_range = range(2, Kmax + 1)
-    for k in K_range:
+
+    plt.figure(figsize=(15, 5))
+    plt.suptitle("3D Pixel Clouds for the First Image across K")
+
+
+    for k_idx, k in enumerate(K_range):
         wcd_k, iter_k, time_k = [], [], []
         intra_k, inter_k, fisher_k = [], [], []
-        for img in images:
+        for img_idx, img in enumerate(images):
             start = time.time()
             km = KMeans(img, K=k, options={'km_init': 'random', 'max_iter': 100, 'tolerance': 0})
             km.fit()
@@ -143,6 +158,10 @@ def Kmean_statistics(images, Kmax=10):
             intra_k.append(intra)
             inter_k.append(inter)
             fisher_k.append(inter / intra if intra != 0 else 0)
+        
+            if img_idx == 4:
+                ax = Plot3DCloud(km, rows=1, cols=len(K_range), spl_id=k_idx+1)
+                plt.title(f"K = {k}")
 
         wcd_values.append(np.mean(wcd_k))
         iterations.append(np.mean(iter_k))
@@ -158,7 +177,7 @@ def Kmean_statistics(images, Kmax=10):
               f"iters(mean)={iterations[-1]:.2f} | "
               f"time(mean)={times[-1]:.4f}s")
 
-    # --- Gráfico solo de WCD ---
+    #grafic wcd
     plt.figure()
     plt.plot(K_range, wcd_values, marker='o', label="WCD")
     plt.xlabel("K")
@@ -166,7 +185,7 @@ def Kmean_statistics(images, Kmax=10):
     plt.title("KMeans Average Within-Class Distance (WCD)")
     plt.legend()
 
-    # --- Gráfico de intra/inter/fisher ---
+    # grafic intra/inter/fisher
     plt.figure()
     plt.plot(K_range, intra_means, marker='o', label="Intra-class")
     plt.plot(K_range, inter_means, marker='o', label="Inter-class")
@@ -176,20 +195,22 @@ def Kmean_statistics(images, Kmax=10):
     plt.title("KMeans Intra-class, Inter-class & Fisher")
     plt.legend()
 
-    # --- Gráfica de iterations ---
+    #grafic iterations
     plt.figure()
     plt.plot(K_range, iterations, marker='o')
     plt.xlabel("K")
     plt.ylabel("Mean Iterations")
     plt.title("Iterations until Convergence")
 
-    # --- Gráfica de tiempos ---
+    #grafic temps
     plt.figure()
     plt.plot(K_range, times, marker='o')
     plt.xlabel("K")
     plt.ylabel("Mean Time (s)")
     plt.title("Execution Time for KMeans")
     plt.show()
+
+    
 
 
 def inter_class_distance(X, labels):
@@ -278,6 +299,9 @@ if __name__ == '__main__':
             print("Which color do you want to find?\n1. Red\n2. Orange\n3. Brown\n4. Yellow\n5. Green\n6. Blue\n7. Purple\n8. Pink\n9. Black\n10. Grey\n11. White")
 
             choice = int(input("Enter a number (1-11): "))
+            print("Note: searching for more than 2 colors is not recommended due to innacurate results")
+            choice2 = int(input("Enter 0 to continue or enter another number to search for 2 colors: "))
+            colors = []
 
             if choice == 1:
                 color = "Red"
@@ -303,20 +327,57 @@ if __name__ == '__main__':
                 color = "White"
             else:
                 color = "Invalid option"
+            colors.append(color)
+            if choice2 != 0:
+                if choice2 == 1:
+                    color2 = "Red"
+                elif choice2 == 2:
+                    color2 = "Orange"
+                elif choice2 == 3:
+                    color2 = "Brown"
+                elif choice2 == 4:
+                    color2 = "Yellow"
+                elif choice2 == 5:
+                    color2 = "Green"
+                elif choice2 == 6:
+                    color2 = "Blue"
+                elif choice2 == 7:
+                    color2 = "Purple"
+                elif choice2 == 8:
+                    color2 = "Pink"
+                elif choice2 == 9:
+                    color2 = "Black"
+                elif choice2 == 10:
+                    color2 = "Grey"
+                elif choice2 == 11:
+                    color2 = "White"
+                else:
+                    color2 = "Invalid option"
+                colors.append(color2)
             n_items = int(input("How many images do you want to search? Enter a number: "))
-            print("Choose the value to assign to K:\n1. K=3 always (faster)\n2. Run find_bestK for each image (slower)")
+            print("Choose the value to assign to K:\n1. K=2 always (faster)\n2. Run find_bestK for each image (slower)")
             option = int(input("Enter a number (1 or 2): "))
+            threshold = -1
+            if option == 2:
+                threshold = int(input("Choose threshold: "))  
             print("Please wait...")
-            selected_imgs, selected_labels, selected_indexes, statistics = Retrieval_by_color(test_imgs_color, color, n_items, option)
+            selected_imgs, selected_labels, selected_indexes, statistics = Retrieval_by_color(test_imgs_color, colors, n_items, option, threshold)
             test_color_labels_reduced = test_color_labels[selected_indexes]
             correct_colors = []
-            for i in test_color_labels_reduced:
-                if color in i:
-                    correct_colors.append(True)
-                else:
-                    correct_colors.append(False)
+            if choice2 == 0:
+                for i in test_color_labels_reduced:
+                    if color in i:
+                        correct_colors.append(True)
+                    else:
+                        correct_colors.append(False)
+            else:
+                for i in test_color_labels_reduced:
+                    if (colors[0] in i) and (colors[1] in i):
+                        correct_colors.append(True)
+                    else:
+                        correct_colors.append(False)
             accuracy = correct_colors.count(True)/len(correct_colors)
-            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_colors, title=("Searched for",color,"Accuracy:",accuracy), query=None)
+            visualize_retrieval(selected_imgs, n_items, info=test_color_labels_reduced, ok=correct_colors, title=("Searched for",colors,"Accuracy:",accuracy), query=None)
             print("Accuracy:", accuracy)
 
         elif function == 2:
@@ -427,7 +488,7 @@ if __name__ == '__main__':
         elif function == 4:
             print(Get_shape_accuracy(correct_shapes))
         elif function == 5:
-            print("Choose the value to assign to K:\n1. K=3 always (faster)\n2. Run find_bestK for each image (slower)")
+            print("Choose the value to assign to K:\n1. K=2 always (faster)\n2. Run find_bestK for each image (slower)")
             option = int(input("Enter a number (1 or 2): "))
             threshold = -1
             if option == 2:
